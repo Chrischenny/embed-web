@@ -14,7 +14,7 @@
 
 enum { MQTT_OK, MQTT_INCOMPLETE, MQTT_MALFORMED };
 
-void mg_mqtt_send_header(struct mg_connection *c, uint8_t cmd, uint8_t flags,
+void emb_mqtt_send_header(struct emb_connection *c, uint8_t cmd, uint8_t flags,
                          uint32_t len) {
   uint8_t buf[1 + sizeof(len)], *vlen = &buf[1];
   buf[0] = (uint8_t) ((cmd << 4) | flags);
@@ -24,24 +24,24 @@ void mg_mqtt_send_header(struct mg_connection *c, uint8_t cmd, uint8_t flags,
     if (len > 0) *vlen |= 0x80;
     vlen++;
   } while (len > 0 && vlen < &buf[sizeof(buf)]);
-  mg_send(c, buf, (size_t) (vlen - buf));
+  emb_send(c, buf, (size_t) (vlen - buf));
 }
 
-static void mg_send_u16(struct mg_connection *c, uint16_t value) {
-  mg_send(c, &value, sizeof(value));
+static void emb_send_u16(struct emb_connection *c, uint16_t value) {
+  emb_send(c, &value, sizeof(value));
 }
 
-void mg_mqtt_login(struct mg_connection *c, const struct mg_mqtt_opts *opts) {
+void emb_mqtt_login(struct emb_connection *c, const struct emb_mqtt_opts *opts) {
   char rnd[9], client_id[16];
-  struct mg_str cid = opts->client_id;
+  struct emb_str cid = opts->client_id;
   uint32_t total_len = 7 + 1 + 2 + 2;
   uint8_t connflag = (uint8_t) ((opts->will_qos & 3) << 3);
 
   if (cid.len == 0) {
-    mg_random(rnd, sizeof(rnd));
-    mg_base64_encode((unsigned char *) rnd, sizeof(rnd), client_id);
+    emb_random(rnd, sizeof(rnd));
+    emb_base64_encode((unsigned char *) rnd, sizeof(rnd), client_id);
     client_id[sizeof(client_id) - 1] = '\0';
-    cid = mg_str(client_id);
+    cid = emb_str(client_id);
   }
 
   if (opts->user.len > 0) {
@@ -61,58 +61,58 @@ void mg_mqtt_login(struct mg_connection *c, const struct mg_mqtt_opts *opts) {
   if (opts->will_retain) connflag |= MQTT_WILL_RETAIN;
   total_len += (uint32_t) cid.len;
 
-  mg_mqtt_send_header(c, MQTT_CMD_CONNECT, 0, total_len);
-  mg_send(c, "\00\04MQTT\04", 7);
-  mg_send(c, &connflag, sizeof(connflag));
+  emb_mqtt_send_header(c, MQTT_CMD_CONNECT, 0, total_len);
+  emb_send(c, "\00\04MQTT\04", 7);
+  emb_send(c, &connflag, sizeof(connflag));
   // keepalive == 0 means "do not disconnect us!"
-  mg_send_u16(c, mg_htons((uint16_t) opts->keepalive));
-  mg_send_u16(c, mg_htons((uint16_t) cid.len));
-  mg_send(c, cid.ptr, cid.len);
+  emb_send_u16(c, emb_htons((uint16_t) opts->keepalive));
+  emb_send_u16(c, emb_htons((uint16_t) cid.len));
+  emb_send(c, cid.ptr, cid.len);
   if (connflag & MQTT_HAS_WILL) {
-    mg_send_u16(c, mg_htons((uint16_t) opts->will_topic.len));
-    mg_send(c, opts->will_topic.ptr, opts->will_topic.len);
-    mg_send_u16(c, mg_htons((uint16_t) opts->will_message.len));
-    mg_send(c, opts->will_message.ptr, opts->will_message.len);
+    emb_send_u16(c, emb_htons((uint16_t) opts->will_topic.len));
+    emb_send(c, opts->will_topic.ptr, opts->will_topic.len);
+    emb_send_u16(c, emb_htons((uint16_t) opts->will_message.len));
+    emb_send(c, opts->will_message.ptr, opts->will_message.len);
   }
   if (opts->user.len > 0) {
-    mg_send_u16(c, mg_htons((uint16_t) opts->user.len));
-    mg_send(c, opts->user.ptr, opts->user.len);
+    emb_send_u16(c, emb_htons((uint16_t) opts->user.len));
+    emb_send(c, opts->user.ptr, opts->user.len);
   }
   if (opts->pass.len > 0) {
-    mg_send_u16(c, mg_htons((uint16_t) opts->pass.len));
-    mg_send(c, opts->pass.ptr, opts->pass.len);
+    emb_send_u16(c, emb_htons((uint16_t) opts->pass.len));
+    emb_send(c, opts->pass.ptr, opts->pass.len);
   }
 }
 
-void mg_mqtt_pub(struct mg_connection *c, struct mg_str topic,
-                 struct mg_str data, int qos, bool retain) {
+void emb_mqtt_pub(struct emb_connection *c, struct emb_str topic,
+                 struct emb_str data, int qos, bool retain) {
   uint8_t flags = (uint8_t) (((qos & 3) << 1) | (retain ? 1 : 0));
   uint32_t total_len = 2 + (uint32_t) topic.len + (uint32_t) data.len;
-  MG_DEBUG(("%lu [%.*s] -> [%.*s]", c->id, (int) topic.len, (char *) topic.ptr,
+  EMB_DEBUG(("%lu [%.*s] -> [%.*s]", c->id, (int) topic.len, (char *) topic.ptr,
             (int) data.len, (char *) data.ptr));
   if (qos > 0) total_len += 2;
-  mg_mqtt_send_header(c, MQTT_CMD_PUBLISH, flags, total_len);
-  mg_send_u16(c, mg_htons((uint16_t) topic.len));
-  mg_send(c, topic.ptr, topic.len);
+  emb_mqtt_send_header(c, MQTT_CMD_PUBLISH, flags, total_len);
+  emb_send_u16(c, emb_htons((uint16_t) topic.len));
+  emb_send(c, topic.ptr, topic.len);
   if (qos > 0) {
     if (++c->mgr->mqtt_id == 0) ++c->mgr->mqtt_id;
-    mg_send_u16(c, mg_htons(c->mgr->mqtt_id));
+    emb_send_u16(c, emb_htons(c->mgr->mqtt_id));
   }
-  mg_send(c, data.ptr, data.len);
+  emb_send(c, data.ptr, data.len);
 }
 
-void mg_mqtt_sub(struct mg_connection *c, struct mg_str topic, int qos) {
+void emb_mqtt_sub(struct emb_connection *c, struct emb_str topic, int qos) {
   uint8_t qos_ = qos & 3;
   uint32_t total_len = 2 + (uint32_t) topic.len + 2 + 1;
-  mg_mqtt_send_header(c, MQTT_CMD_SUBSCRIBE, 2, total_len);
+  emb_mqtt_send_header(c, MQTT_CMD_SUBSCRIBE, 2, total_len);
   if (++c->mgr->mqtt_id == 0) ++c->mgr->mqtt_id;
-  mg_send_u16(c, mg_htons(c->mgr->mqtt_id));
-  mg_send_u16(c, mg_htons((uint16_t) topic.len));
-  mg_send(c, topic.ptr, topic.len);
-  mg_send(c, &qos_, sizeof(qos_));
+  emb_send_u16(c, emb_htons(c->mgr->mqtt_id));
+  emb_send_u16(c, emb_htons((uint16_t) topic.len));
+  emb_send(c, topic.ptr, topic.len);
+  emb_send(c, &qos_, sizeof(qos_));
 }
 
-int mg_mqtt_parse(const uint8_t *buf, size_t len, struct mg_mqtt_message *m) {
+int emb_mqtt_parse(const uint8_t *buf, size_t len, struct emb_mqtt_message *m) {
   uint8_t lc = 0, *p, *end;
   uint32_t n = 0, len_len = 0;
 
@@ -176,8 +176,8 @@ int mg_mqtt_parse(const uint8_t *buf, size_t len, struct mg_mqtt_message *m) {
   return MQTT_OK;
 }
 
-static size_t mg_mqtt_next_topic(struct mg_mqtt_message *msg,
-                                 struct mg_str *topic, uint8_t *qos,
+static size_t emb_mqtt_next_topic(struct emb_mqtt_message *msg,
+                                 struct emb_str *topic, uint8_t *qos,
                                  size_t pos) {
   unsigned char *buf = (unsigned char *) msg->dgram.ptr + pos;
   size_t new_pos;
@@ -191,54 +191,54 @@ static size_t mg_mqtt_next_topic(struct mg_mqtt_message *msg,
   return new_pos;
 }
 
-size_t mg_mqtt_next_sub(struct mg_mqtt_message *msg, struct mg_str *topic,
+size_t emb_mqtt_next_sub(struct emb_mqtt_message *msg, struct emb_str *topic,
                         uint8_t *qos, size_t pos) {
   uint8_t tmp;
-  return mg_mqtt_next_topic(msg, topic, qos == NULL ? &tmp : qos, pos);
+  return emb_mqtt_next_topic(msg, topic, qos == NULL ? &tmp : qos, pos);
 }
 
-size_t mg_mqtt_next_unsub(struct mg_mqtt_message *msg, struct mg_str *topic,
+size_t emb_mqtt_next_unsub(struct emb_mqtt_message *msg, struct emb_str *topic,
                           size_t pos) {
-  return mg_mqtt_next_topic(msg, topic, NULL, pos);
+  return emb_mqtt_next_topic(msg, topic, NULL, pos);
 }
 
-static void mqtt_cb(struct mg_connection *c, int ev, void *ev_data,
+static void mqtt_cb(struct emb_connection *c, int ev, void *ev_data,
                     void *fn_data) {
-  if (ev == MG_EV_READ) {
+  if (ev == EMB_EV_READ) {
     for (;;) {
-      struct mg_mqtt_message mm;
-      int rc = mg_mqtt_parse(c->recv.buf, c->recv.len, &mm);
+      struct emb_mqtt_message mm;
+      int rc = emb_mqtt_parse(c->recv.buf, c->recv.len, &mm);
       if (rc == MQTT_MALFORMED) {
-        MG_ERROR(("%lu MQTT malformed message", c->id));
+        EMB_ERROR(("%lu MQTT malformed message", c->id));
         c->is_closing = 1;
         break;
       } else if (rc == MQTT_OK) {
-        MG_VERBOSE(("%p MQTT CMD %d len %d [%.*s]", c->fd, mm.cmd,
+        EMB_VERBOSE(("%p MQTT CMD %d len %d [%.*s]", c->fd, mm.cmd,
                     (int) mm.dgram.len, (int) mm.data.len, mm.data.ptr));
         switch (mm.cmd) {
           case MQTT_CMD_CONNACK:
-            mg_call(c, MG_EV_MQTT_OPEN, &mm.ack);
+            emb_call(c, EMB_EV_MQTT_OPEN, &mm.ack);
             if (mm.ack == 0) {
-              MG_DEBUG(("%lu Connected", c->id));
+              EMB_DEBUG(("%lu Connected", c->id));
             } else {
-              MG_ERROR(("%lu MQTT auth failed, code %d", c->id, mm.ack));
+              EMB_ERROR(("%lu MQTT auth failed, code %d", c->id, mm.ack));
               c->is_closing = 1;
             }
             break;
           case MQTT_CMD_PUBLISH: {
-            MG_DEBUG(("%lu [%.*s] -> [%.*s]", c->id, (int) mm.topic.len,
+            EMB_DEBUG(("%lu [%.*s] -> [%.*s]", c->id, (int) mm.topic.len,
                       mm.topic.ptr, (int) mm.data.len, mm.data.ptr));
             if (mm.qos > 0) {
-              uint16_t id = mg_htons(mm.id);
-              mg_mqtt_send_header(c, MQTT_CMD_PUBACK, 0, sizeof(id));
-              mg_send(c, &id, sizeof(id));
+              uint16_t id = emb_htons(mm.id);
+              emb_mqtt_send_header(c, MQTT_CMD_PUBACK, 0, sizeof(id));
+              emb_send(c, &id, sizeof(id));
             }
-            mg_call(c, MG_EV_MQTT_MSG, &mm);
+            emb_call(c, EMB_EV_MQTT_MSG, &mm);
             break;
           }
         }
-        mg_call(c, MG_EV_MQTT_CMD, &mm);
-        mg_iobuf_del(&c->recv, 0, mm.dgram.len);
+        emb_call(c, EMB_EV_MQTT_CMD, &mm);
+        emb_iobuf_del(&c->recv, 0, mm.dgram.len);
       } else {
         break;
       }
@@ -248,34 +248,34 @@ static void mqtt_cb(struct mg_connection *c, int ev, void *ev_data,
   (void) fn_data;
 }
 
-void mg_mqtt_ping(struct mg_connection *nc) {
-  mg_mqtt_send_header(nc, MQTT_CMD_PINGREQ, 0, 0);
+void emb_mqtt_ping(struct emb_connection *nc) {
+  emb_mqtt_send_header(nc, MQTT_CMD_PINGREQ, 0, 0);
 }
 
-void mg_mqtt_pong(struct mg_connection *nc) {
-  mg_mqtt_send_header(nc, MQTT_CMD_PINGRESP, 0, 0);
+void emb_mqtt_pong(struct emb_connection *nc) {
+  emb_mqtt_send_header(nc, MQTT_CMD_PINGRESP, 0, 0);
 }
 
-void mg_mqtt_disconnect(struct mg_connection *nc) {
-  mg_mqtt_send_header(nc, MQTT_CMD_DISCONNECT, 0, 0);
+void emb_mqtt_disconnect(struct emb_connection *nc) {
+  emb_mqtt_send_header(nc, MQTT_CMD_DISCONNECT, 0, 0);
 }
 
-struct mg_connection *mg_mqtt_connect(struct mg_mgr *mgr, const char *url,
-                                      const struct mg_mqtt_opts *opts,
-                                      mg_event_handler_t fn, void *fn_data) {
-  struct mg_connection *c = mg_connect(mgr, url, fn, fn_data);
+struct emb_connection *emb_mqtt_connect(struct emb_mgr *mgr, const char *url,
+                                      const struct emb_mqtt_opts *opts,
+                                      emb_event_handler_t fn, void *fn_data) {
+  struct emb_connection *c = emb_connect(mgr, url, fn, fn_data);
   if (c != NULL) {
-    struct mg_mqtt_opts empty;
+    struct emb_mqtt_opts empty;
     memset(&empty, 0, sizeof(empty));
-    mg_mqtt_login(c, opts == NULL ? &empty : opts);
+    emb_mqtt_login(c, opts == NULL ? &empty : opts);
     c->pfn = mqtt_cb;
   }
   return c;
 }
 
-struct mg_connection *mg_mqtt_listen(struct mg_mgr *mgr, const char *url,
-                                     mg_event_handler_t fn, void *fn_data) {
-  struct mg_connection *c = mg_listen(mgr, url, fn, fn_data);
+struct emb_connection *emb_mqtt_listen(struct emb_mgr *mgr, const char *url,
+                                     emb_event_handler_t fn, void *fn_data) {
+  struct emb_connection *c = emb_listen(mgr, url, fn, fn_data);
   if (c != NULL) c->pfn = mqtt_cb, c->pfn_data = mgr;
   return c;
 }

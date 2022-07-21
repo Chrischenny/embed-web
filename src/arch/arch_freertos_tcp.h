@@ -1,6 +1,6 @@
 #pragma once
 
-#if MG_ARCH == MG_ARCH_FREERTOS_TCP
+#if EMB_ARCH == EMB_ARCH_FREERTOS_TCP
 
 #include <ctype.h>
 #include <errno.h>
@@ -47,13 +47,17 @@
 #define gethostbyname(x) FreeRTOS_gethostbyname(x)
 #define getsockname(a, b, c) (-1)
 
+#define EMB_SOCK_ERRNO errno
+typedef Socket_t SOCKET;
+#define INVALID_SOCKET FREERTOS_INVALID_SOCKET
+
 // Re-route calloc/free to the FreeRTOS's functions, don't use stdlib
-static inline void *mg_calloc(int cnt, size_t size) {
+static inline void *emb_calloc(int cnt, size_t size) {
   void *p = pvPortMalloc(cnt * size);
   if (p != NULL) memset(p, 0, size);
   return p;
 }
-#define calloc(a, b) mg_calloc((a), (b))
+#define calloc(a, b) emb_calloc((a), (b))
 #define free(a) vPortFree(a)
 #define malloc(a) pvPortMalloc(a)
 #define mkdir(a, b) (-1)
@@ -79,4 +83,4 @@ struct timeval {
 #define EINTR pdFREERTOS_ERRNO_EINTR
 #endif
 
-#endif  // MG_ARCH == MG_ARCH_FREERTOS_TCP
+#endif  // EMB_ARCH == EMB_ARCH_FREERTOS_TCP

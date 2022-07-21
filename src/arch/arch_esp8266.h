@@ -1,6 +1,6 @@
 #pragma once
 
-#if MG_ARCH == MG_ARCH_ESP8266
+#if EMB_ARCH == EMB_ARCH_ESP8266
 
 #include <ctype.h>
 #include <dirent.h>
@@ -21,6 +21,6 @@
 
 #include <esp_system.h>
 
-#define MG_PATH_MAX 128
+#define EMB_PATH_MAX 128
 
 #endif

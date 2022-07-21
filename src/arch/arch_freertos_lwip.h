@@ -1,6 +1,6 @@
 #pragma once
 
-#if MG_ARCH == MG_ARCH_FREERTOS_LWIP
+#if EMB_ARCH == EMB_ARCH_FREERTOS_LWIP
 
 #include <ctype.h>
 #include <stdarg.h>
@@ -30,23 +30,23 @@ struct timeval {
 #endif
 
 // Re-route calloc/free to the FreeRTOS's functions, don't use stdlib
-static inline void *mg_calloc(int cnt, size_t size) {
+static inline void *emb_calloc(int cnt, size_t size) {
   void *p = pvPortMalloc(cnt * size);
   if (p != NULL) memset(p, 0, size);
   return p;
 }
-#define calloc(a, b) mg_calloc((a), (b))
+#define calloc(a, b) emb_calloc((a), (b))
 #define free(a) vPortFree(a)
 #define malloc(a) pvPortMalloc(a)
 
 #define mkdir(a, b) (-1)
 
-#ifndef MG_IO_SIZE
-#define MG_IO_SIZE 512
+#ifndef EMB_IO_SIZE
+#define EMB_IO_SIZE 512
 #endif
 
-#ifndef MG_PATH_MAX
-#define MG_PATH_MAX 128
+#ifndef EMB_PATH_MAX
+#define EMB_PATH_MAX 128
 #endif
 
-#endif  // MG_ARCH == MG_ARCH_FREERTOS_LWIP
+#endif  // EMB_ARCH == EMB_ARCH_FREERTOS_LWIP

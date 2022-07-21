@@ -1,6 +1,6 @@
 #pragma once
 
-#if MG_ARCH == MG_ARCH_ZEPHYR
+#if EMB_ARCH == EMB_ARCH_ZEPHYR
 
 #include <zephyr.h>
 
@@ -17,11 +17,11 @@
 #include <sys/types.h>
 #include <time.h>
 
-#define MG_PUTCHAR(x) printk("%c", x)
+#define EMB_PUTCHAR(x) printk("%c", x)
 #define strerror(x) zsock_gai_strerror(x)
 #define FD_CLOEXEC 0
 #define F_SETFD 0
-#define MG_ENABLE_SSI 0
+#define EMB_ENABLE_SSI 0
 
 int rand(void);
 int sscanf(const char *, const char *, ...);

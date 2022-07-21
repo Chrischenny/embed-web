@@ -1,11 +1,11 @@
 #pragma once
 
-#if MG_ENABLE_OPENSSL
+#if EMB_ENABLE_OPENSSL
 
 #include <openssl/err.h>
 #include <openssl/ssl.h>
 
-struct mg_tls {
+struct emb_tls {
   SSL_CTX *ctx;
   SSL *ssl;
 };

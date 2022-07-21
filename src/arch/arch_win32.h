@@ -1,6 +1,6 @@
 #pragma once
 
-#if MG_ARCH == MG_ARCH_WIN32
+#if EMB_ARCH == EMB_ARCH_WIN32
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -61,7 +61,12 @@ typedef enum { false = 0, true = 1 } bool;
 #endif
 
 typedef int socklen_t;
-#define MG_DIRSEP '\\'
+#define EMB_SOCK_ERRNO WSAGetLastError()
+#ifndef SO_EXCLUSIVEADDRUSE
+#define SO_EXCLUSIVEADDRUSE ((int) (~SO_REUSEADDR))
+#pragma comment(lib, "ws2_32.lib")
+
+#define EMB_DIRSEP '\\'
 #ifndef PATH_MAX
 #define PATH_MAX MAX_PATH
 #endif
@@ -72,7 +77,7 @@ typedef int socklen_t;
 #define EWOULDBLOCK WSAEWOULDBLOCK
 #endif
 
-#define realpath(a, b) _fullpath((b), (a), MG_PATH_MAX)
+#define realpath(a, b) _fullpath((b), (a), EMB_PATH_MAX)
 #define sleep(x) Sleep(x)
 #define mkdir(a, b) _mkdir(a)
 
@@ -87,8 +92,8 @@ typedef int socklen_t;
 #define S_ISDIR(x) (((x) &_S_IFMT) == _S_IFDIR)
 #endif
 
-#ifndef MG_ENABLE_DIRLIST
-#define MG_ENABLE_DIRLIST 1
+#ifndef EMB_ENABLE_DIRLIST
+#define EMB_ENABLE_DIRLIST 1
 #endif
 
 #endif

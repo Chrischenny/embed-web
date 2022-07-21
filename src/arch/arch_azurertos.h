@@ -1,6 +1,6 @@
 #pragma once
 
-#if MG_ARCH == MG_ARCH_AZURERTOS
+#if EMB_ARCH == EMB_ARCH_AZURERTOS
 
 #include <stdarg.h>
 #include <stdbool.h>
@@ -21,7 +21,7 @@
 #endif
 
 #define PATH_MAX FX_MAXIMUM_PATH
-#define MG_DIRSEP '\\'
+#define EMB_DIRSEP '\\'
 
 #define socklen_t int
 #define closesocket(x) soc_close(x)

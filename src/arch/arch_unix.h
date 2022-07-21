@@ -1,11 +1,26 @@
-#pragma once
+/**
+ * @file arch_unix.h
+ * @author your name (you@domain.com)
+ * @brief 
+ * @version 0.1
+ * @date 2022-07-16
+ * 
+ * @copyright Copyright (c) 2022
+ * 
+ */
+#ifndef __ARCH_UNIX_H__
+#define __ARCH_UNIX_H__
 
-#if MG_ARCH == MG_ARCH_UNIX
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if EMB_ARCH == EMB_ARCH_UNIX
 
 #define _DARWIN_UNLIMITED_SELECT 1  // No limit on file descriptors
 
-#if !defined(MG_ENABLE_POLL) && (defined(__linux__) || defined(__APPLE__))
-#define MG_ENABLE_POLL 1
+#if !defined(EMB_ENABLE_POLL) && (defined(__linux__) || defined(__APPLE__))
+#define EMB_ENABLE_POLL 1
 #endif
 
 #include <arpa/inet.h>
@@ -26,7 +41,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#if defined(MG_ENABLE_POLL) && MG_ENABLE_POLL
+#if defined(EMB_ENABLE_POLL) && EMB_ENABLE_POLL
 #include <poll.h>
 #else
 #include <sys/select.h>
@@ -38,8 +53,23 @@
 #include <time.h>
 #include <unistd.h>
 
-#ifndef MG_ENABLE_DIRLIST
-#define MG_ENABLE_DIRLIST 1
+#ifndef EMB_ENABLE_DIRLIST
+#define EMB_ENABLE_DIRLIST 1
 #endif
 
+
+#define EMB_SOCK_ERRNO errno
+#ifndef closesocket
+#define closesocket(x) close(x)
 #endif
+#define INVALID_SOCKET (-1)
+typedef int SOCKET;
+
+#endif
+
+#ifdef __cplusplus
+}
+#endif
+#endif // __ARCH_UNIX_H__
+
+

@@ -1,6 +1,6 @@
 #pragma once
 
-#if MG_ARCH == MG_ARCH_RTX
+#if EMB_ARCH == EMB_ARCH_RTX
 
 #include <ctype.h>
 #include <errno.h>
@@ -15,7 +15,7 @@
 
 #include <rl_net.h>
 
-#define MG_ENABLE_CUSTOM_MILLIS 1
+#define EMB_ENABLE_CUSTOM_MILLIS 1
 typedef int socklen_t;
 #define closesocket(x) closesocket(x)
 #define mkdir(a, b) (-1)

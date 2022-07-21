@@ -15,7 +15,12 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include <stdarg.h>
+
+#include <stddef.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
 
 #ifdef EMB_CUSTOM_SETTINGS
 #include "emb_settings"
@@ -56,6 +61,19 @@ extern "C" {
 #ifndef EMB_LOG_DBG(fmt, ...)
 #define EMB_LOG_DBG(fmt, ...) printf("debug, "fmt"\n", ##__VA_ARGS__)
 #endif
+
+#undef offsetof
+#ifdef __compiler_offsetof
+#define offsetof(type, member) __compiler_offsetof(type, member)
+#else
+#define offsetof(type, member) ((size_t) &((type *)0)->member)
+#endif
+
+#define container_of(ptr, type, member) ({ \
+    const typeof(((type *)0)->member) *_ptr = (ptr); \
+    (type *)((char *)_ptr - offsetof(type, member)); \
+})
+
 
 #ifdef __cplusplus
 }

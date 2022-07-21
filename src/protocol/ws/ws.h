@@ -9,17 +9,17 @@
 
 #include "http.h"
 
-struct mg_ws_message {
-  struct mg_str data;  // Websocket message data
+struct emb_ws_message {
+  struct emb_str data;  // Websocket message data
   uint8_t flags;       // Websocket message flags
 };
 
-struct mg_connection *mg_ws_connect(struct mg_mgr *, const char *url,
-                                    mg_event_handler_t fn, void *fn_data,
+struct emb_connection *emb_ws_connect(struct emb_mgr *, const char *url,
+                                    emb_event_handler_t fn, void *fn_data,
                                     const char *fmt, ...);
-void mg_ws_upgrade(struct mg_connection *, struct mg_http_message *,
+void emb_ws_upgrade(struct emb_connection *, struct emb_http_message *,
                    const char *fmt, ...);
-size_t mg_ws_send(struct mg_connection *, const char *buf, size_t len, int op);
-size_t mg_ws_wrap(struct mg_connection *, size_t len, int op);
-size_t mg_ws_printf(struct mg_connection *c, int op, const char *fmt, ...);
-size_t mg_ws_vprintf(struct mg_connection *c, int op, const char *fmt, va_list);
+size_t emb_ws_send(struct emb_connection *, const char *buf, size_t len, int op);
+size_t emb_ws_wrap(struct emb_connection *, size_t len, int op);
+size_t emb_ws_printf(struct emb_connection *c, int op, const char *fmt, ...);
+size_t emb_ws_vprintf(struct emb_connection *c, int op, const char *fmt, va_list);

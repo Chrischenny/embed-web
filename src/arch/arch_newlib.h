@@ -1,6 +1,6 @@
 #pragma once
 
-#if MG_ARCH == MG_ARCH_NEWLIB
+#if EMB_ARCH == EMB_ARCH_NEWLIB
 #define _POSIX_TIMERS
 
 #include <ctype.h>
@@ -16,8 +16,8 @@
 #include <time.h>
 #include <unistd.h>
 
-#define MG_PATH_MAX 100
-#define MG_ENABLE_SOCKET 0
-#define MG_ENABLE_DIRLIST 0
+#define EMB_PATH_MAX 100
+#define EMB_ENABLE_SOCKET 0
+#define EMB_ENABLE_DIRLIST 0
 
 #endif

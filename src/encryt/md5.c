@@ -1,7 +1,7 @@
 #include <string.h>
 #include "md5.h"
 
-#if defined(MG_ENABLE_MD5) && MG_ENABLE_MD5
+#if defined(EMB_ENABLE_MD5) && EMB_ENABLE_MD5
 #if !defined(BYTE_ORDER) && defined(__BYTE_ORDER)
 #define BYTE_ORDER __BYTE_ORDER
 #ifndef LITTLE_ENDIAN
@@ -12,7 +12,7 @@
 #endif /* BIG_ENDIAN */
 #endif /* BYTE_ORDER */
 
-static void mg_byte_reverse(unsigned char *buf, unsigned longs) {
+static void emb_byte_reverse(unsigned char *buf, unsigned longs) {
 /* Forrest: MD5 expect LITTLE_ENDIAN, swap if BIG_ENDIAN */
 #if BYTE_ORDER == BIG_ENDIAN
   do {
@@ -39,7 +39,7 @@ static void mg_byte_reverse(unsigned char *buf, unsigned longs) {
  * Start MD5 accumulation.  Set bit count to 0 and buffer to mysterious
  * initialization constants.
  */
-void mg_md5_init(mg_md5_ctx *ctx) {
+void emb_md5_init(emb_md5_ctx *ctx) {
   ctx->buf[0] = 0x67452301;
   ctx->buf[1] = 0xefcdab89;
   ctx->buf[2] = 0x98badcfe;
@@ -49,7 +49,7 @@ void mg_md5_init(mg_md5_ctx *ctx) {
   ctx->bits[1] = 0;
 }
 
-static void mg_md5_transform(uint32_t buf[4], uint32_t const in[16]) {
+static void emb_md5_transform(uint32_t buf[4], uint32_t const in[16]) {
   uint32_t a, b, c, d;
 
   a = buf[0];
@@ -131,7 +131,7 @@ static void mg_md5_transform(uint32_t buf[4], uint32_t const in[16]) {
   buf[3] += d;
 }
 
-void mg_md5_update(mg_md5_ctx *ctx, const unsigned char *buf, size_t len) {
+void emb_md5_update(emb_md5_ctx *ctx, const unsigned char *buf, size_t len) {
   uint32_t t;
 
   t = ctx->bits[0];
@@ -149,16 +149,16 @@ void mg_md5_update(mg_md5_ctx *ctx, const unsigned char *buf, size_t len) {
       return;
     }
     memcpy(p, buf, t);
-    mg_byte_reverse(ctx->in, 16);
-    mg_md5_transform(ctx->buf, (uint32_t *) ctx->in);
+    emb_byte_reverse(ctx->in, 16);
+    emb_md5_transform(ctx->buf, (uint32_t *) ctx->in);
     buf += t;
     len -= t;
   }
 
   while (len >= 64) {
     memcpy(ctx->in, buf, 64);
-    mg_byte_reverse(ctx->in, 16);
-    mg_md5_transform(ctx->buf, (uint32_t *) ctx->in);
+    emb_byte_reverse(ctx->in, 16);
+    emb_md5_transform(ctx->buf, (uint32_t *) ctx->in);
     buf += 64;
     len -= 64;
   }
@@ -166,7 +166,7 @@ void mg_md5_update(mg_md5_ctx *ctx, const unsigned char *buf, size_t len) {
   memcpy(ctx->in, buf, len);
 }
 
-void mg_md5_final(mg_md5_ctx *ctx, unsigned char digest[16]) {
+void emb_md5_final(emb_md5_ctx *ctx, unsigned char digest[16]) {
   unsigned count;
   unsigned char *p;
   uint32_t *a;
@@ -178,20 +178,20 @@ void mg_md5_final(mg_md5_ctx *ctx, unsigned char digest[16]) {
   count = 64 - 1 - count;
   if (count < 8) {
     memset(p, 0, count);
-    mg_byte_reverse(ctx->in, 16);
-    mg_md5_transform(ctx->buf, (uint32_t *) ctx->in);
+    emb_byte_reverse(ctx->in, 16);
+    emb_md5_transform(ctx->buf, (uint32_t *) ctx->in);
     memset(ctx->in, 0, 56);
   } else {
     memset(p, 0, count - 8);
   }
-  mg_byte_reverse(ctx->in, 14);
+  emb_byte_reverse(ctx->in, 14);
 
   a = (uint32_t *) ctx->in;
   a[14] = ctx->bits[0];
   a[15] = ctx->bits[1];
 
-  mg_md5_transform(ctx->buf, (uint32_t *) ctx->in);
-  mg_byte_reverse((unsigned char *) ctx->buf, 4);
+  emb_md5_transform(ctx->buf, (uint32_t *) ctx->in);
+  emb_byte_reverse((unsigned char *) ctx->buf, 4);
   memcpy(digest, ctx->buf, 16);
   memset((char *) ctx, 0, sizeof(*ctx));
 }

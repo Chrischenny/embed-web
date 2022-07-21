@@ -19,64 +19,64 @@
 #include "emb_svr.h"
 #include "str.h"
 
-size_t mg_vprintf(struct mg_connection *c, const char *fmt, va_list ap)
+size_t emb_vprintf(struct emb_connection *c, const char *fmt, va_list ap)
 {
     char mem[256], *buf = mem;
-    size_t len = mg_vasprintf(&buf, sizeof(mem), fmt, ap);
-    len = mg_send(c, buf, len);
+    size_t len = emb_vasprintf(&buf, sizeof(mem), fmt, ap);
+    len = emb_send(c, buf, len);
     if (buf != mem)
         free(buf);
     return len;
 }
 
-size_t mg_printf(struct mg_connection *c, const char *fmt, ...)
+size_t emb_printf(struct emb_connection *c, const char *fmt, ...)
 {
     size_t len = 0;
     va_list ap;
     va_start(ap, fmt);
-    len = mg_vprintf(c, fmt, ap);
+    len = emb_vprintf(c, fmt, ap);
     va_end(ap);
     return len;
 }
 
-char *mg_straddr(struct mg_addr *a, char *buf, size_t len)
+char *emb_straddr(struct emb_addr *a, char *buf, size_t len)
 {
     char tmp[30];
     const char *fmt = a->is_ip6 ? "[%s]:%d" : "%s:%d";
-    mg_ntoa(a, tmp, sizeof(tmp));
-    mg_snprintf(buf, len, fmt, tmp, (int)mg_ntohs(a->port));
+    emb_ntoa(a, tmp, sizeof(tmp));
+    emb_snprintf(buf, len, fmt, tmp, (int)emb_ntohs(a->port));
     return buf;
 }
 
-char *mg_ntoa(const struct mg_addr *addr, char *buf, size_t len)
+char *emb_ntoa(const struct emb_addr *addr, char *buf, size_t len)
 {
     if (addr->is_ip6)
     {
         uint16_t *p = (uint16_t *)addr->ip6;
-        mg_snprintf(buf, len, "%x:%x:%x:%x:%x:%x:%x:%x", mg_htons(p[0]),
-                    mg_htons(p[1]), mg_htons(p[2]), mg_htons(p[3]), mg_htons(p[4]),
-                    mg_htons(p[5]), mg_htons(p[6]), mg_htons(p[7]));
+        emb_snprintf(buf, len, "%x:%x:%x:%x:%x:%x:%x:%x", emb_htons(p[0]),
+                    emb_htons(p[1]), emb_htons(p[2]), emb_htons(p[3]), emb_htons(p[4]),
+                    emb_htons(p[5]), emb_htons(p[6]), emb_htons(p[7]));
     }
     else
     {
         uint8_t p[4];
         memcpy(p, &addr->ip, sizeof(p));
-        mg_snprintf(buf, len, "%d.%d.%d.%d", (int)p[0], (int)p[1], (int)p[2],
+        emb_snprintf(buf, len, "%d.%d.%d.%d", (int)p[0], (int)p[1], (int)p[2],
                     (int)p[3]);
     }
     return buf;
 }
 
-static bool mg_atonl(struct mg_str str, struct mg_addr *addr)
+static bool emb_atonl(struct emb_str str, struct emb_addr *addr)
 {
-    if (mg_vcasecmp(&str, "localhost") != 0)
+    if (emb_vcasecmp(&str, "localhost") != 0)
         return false;
-    addr->ip = mg_htonl(0x7f000001);
+    addr->ip = emb_htonl(0x7f000001);
     addr->is_ip6 = false;
     return true;
 }
 
-static bool mg_atone(struct mg_str str, struct mg_addr *addr)
+static bool emb_atone(struct emb_str str, struct emb_addr *addr)
 {
     if (str.len > 0)
         return false;
@@ -85,7 +85,7 @@ static bool mg_atone(struct mg_str str, struct mg_addr *addr)
     return true;
 }
 
-static bool mg_aton4(struct mg_str str, struct mg_addr *addr)
+static bool emb_aton4(struct emb_str str, struct emb_addr *addr)
 {
     uint8_t data[4] = {0, 0, 0, 0};
     size_t i, num_dots = 0;
@@ -116,7 +116,7 @@ static bool mg_aton4(struct mg_str str, struct mg_addr *addr)
     return true;
 }
 
-static bool mg_v4mapped(struct mg_str str, struct mg_addr *addr)
+static bool emb_v4mapped(struct emb_str str, struct emb_addr *addr)
 {
     int i;
     if (str.len < 14)
@@ -128,7 +128,7 @@ static bool mg_v4mapped(struct mg_str str, struct mg_addr *addr)
         if (str.ptr[i] != 'f' && str.ptr[i] != 'F')
             return false;
     }
-    if (!mg_aton4(mg_str_n(&str.ptr[7], str.len - 7), addr))
+    if (!emb_aton4(emb_str_n(&str.ptr[7], str.len - 7), addr))
         return false;
     memset(addr->ip6, 0, sizeof(addr->ip6));
     addr->ip6[10] = addr->ip6[11] = 255;
@@ -137,12 +137,12 @@ static bool mg_v4mapped(struct mg_str str, struct mg_addr *addr)
     return true;
 }
 
-static bool mg_aton6(struct mg_str str, struct mg_addr *addr)
+static bool emb_aton6(struct emb_str str, struct emb_addr *addr)
 {
     size_t i, j = 0, n = 0, dc = 42;
     if (str.len > 2 && str.ptr[0] == '[')
         str.ptr++, str.len -= 2;
-    if (mg_v4mapped(str, addr))
+    if (emb_v4mapped(str, addr))
         return true;
     for (i = 0; i < str.len; i++)
     {
@@ -153,8 +153,8 @@ static bool mg_aton6(struct mg_str str, struct mg_addr *addr)
             unsigned long val;
             if (i > j + 3)
                 return false;
-            // MG_DEBUG(("%zu %zu [%.*s]", i, j, (int) (i - j + 1), &str.ptr[j]));
-            val = mg_unhexn(&str.ptr[j], i - j + 1);
+            // EMB_DEBUG(("%zu %zu [%.*s]", i, j, (int) (i - j + 1), &str.ptr[j]));
+            val = emb_unhexn(&str.ptr[j], i - j + 1);
             addr->ip6[n] = (uint8_t)((val >> 8) & 255);
             addr->ip6[n + 1] = (uint8_t)(val & 255);
         }
@@ -191,11 +191,11 @@ static bool mg_aton6(struct mg_str str, struct mg_addr *addr)
     return true;
 }
 
-bool mg_aton(struct mg_str str, struct mg_addr *addr)
+bool emb_aton(struct emb_str str, struct emb_addr *addr)
 {
-    // MG_INFO(("[%.*s]", (int) str.len, str.ptr));
-    return mg_atone(str, addr) || mg_atonl(str, addr) || mg_aton4(str, addr) ||
-           mg_aton6(str, addr);
+    // EMB_INFO(("[%.*s]", (int) str.len, str.ptr));
+    return emb_atone(str, addr) || emb_atonl(str, addr) || emb_aton4(str, addr) ||
+           emb_aton6(str, addr);
 }
 
 emb_conn_t *emb_alloc_conn(emb_mgr_t *mgr, size_t size)
@@ -214,63 +214,63 @@ emb_conn_t *emb_alloc_conn(emb_mgr_t *mgr, size_t size)
     return c;
 }
 
-void mg_close_conn(struct mg_connection *c)
+void emb_close_conn(struct emb_connection *c)
 {
-    mg_resolve_cancel(c); // Close any pending DNS query
-    LIST_DELETE(struct mg_connection, &c->mgr->conns, c);
+    emb_resolve_cancel(c); // Close any pending DNS query
+    LIST_DELETE(struct emb_connection, &c->mgr->conns, c);
     if (c == c->mgr->dns4.c)
         c->mgr->dns4.c = NULL;
     if (c == c->mgr->dns6.c)
         c->mgr->dns6.c = NULL;
-    // Order of operations is important. `MG_EV_CLOSE` event must be fired
+    // Order of operations is important. `EMB_EV_CLOSE` event must be fired
     // before we deallocate received data, see #1331
-    mg_call(c, MG_EV_CLOSE, NULL);
-    MG_DEBUG(("%lu closed", c->id));
+    emb_call(c, EMB_EV_CLOSE, NULL);
+    EMB_DEBUG(("%lu closed", c->id));
 
-    mg_tls_free(c);
-    mg_iobuf_free(&c->recv);
-    mg_iobuf_free(&c->send);
+    emb_tls_free(c);
+    emb_iobuf_free(&c->recv);
+    emb_iobuf_free(&c->send);
     memset(c, 0, sizeof(*c));
     free(c);
 }
 
-struct mg_connection *mg_connect(struct mg_mgr *mgr, const char *url,
-                                 mg_event_handler_t fn, void *fn_data)
+struct emb_connection *emb_connect(struct emb_mgr *mgr, const char *url,
+                                 emb_event_handler_t fn, void *fn_data)
 {
-    struct mg_connection *c = NULL;
+    struct emb_connection *c = NULL;
     if (url == NULL || url[0] == '\0')
     {
-        MG_ERROR(("null url"));
+        EMB_ERROR(("null url"));
     }
-    else if ((c = mg_alloc_conn(mgr)) == NULL)
+    else if ((c = emb_alloc_conn(mgr)) == NULL)
     {
-        MG_ERROR(("OOM"));
+        EMB_ERROR(("OOM"));
     }
     else
     {
-        LIST_ADD_HEAD(struct mg_connection, &mgr->conns, c);
+        LIST_ADD_HEAD(struct emb_connection, &mgr->conns, c);
         c->is_udp = (strncmp(url, "udp:", 4) == 0);
         c->fn = fn;
         c->is_client = true;
         c->fd = (void *)(size_t)-1; // Set to invalid socket
         c->fn_data = fn_data;
-        MG_DEBUG(("%lu -1 %s", c->id, url));
-        mg_call(c, MG_EV_OPEN, NULL);
-        mg_resolve(c, url);
+        EMB_DEBUG(("%lu -1 %s", c->id, url));
+        emb_call(c, EMB_EV_OPEN, NULL);
+        emb_resolve(c, url);
     }
     return c;
 }
 
-emb_conn_t *emb_listen(emb_mgr_t *mgr, const char *url, mg_event_handler_t fn, void *fn_data)
+emb_conn_t *emb_listen(emb_mgr_t *mgr, const char *url, emb_event_handler_t fn, void *fn_data)
 {
     emb_conn_t *c = NULL;
     if ((c = emb_alloc_conn(mgr, sizeof(emb_conn_t))) == NULL)
     {
-        MG_ERROR(("OOM %s", url));
+        EMB_ERROR(("OOM %s", url));
     }
-    else if (!mg_open_listener(c, url))
+    else if (!emb_open_listener(c, url))
     {
-        MG_ERROR(("Failed: %s, errno %d", url, errno));
+        EMB_ERROR(("Failed: %s, errno %d", url, errno));
         free(c);
         c = NULL;
     }
@@ -278,62 +278,62 @@ emb_conn_t *emb_listen(emb_mgr_t *mgr, const char *url, mg_event_handler_t fn, v
     {
         c->is_listening = 1;
         c->is_udp = strncmp(url, "udp:", 4) == 0;
-        LIST_ADD_HEAD(struct mg_connection, &mgr->conns, c);
+        LIST_ADD_HEAD(struct emb_connection, &mgr->conns, c);
         c->fn = fn;
         c->fn_data = fn_data;
-        mg_call(c, MG_EV_OPEN, NULL);
-        MG_DEBUG(("%lu %p %s", c->id, c->fd, url));
+        emb_call(c, EMB_EV_OPEN, NULL);
+        EMB_DEBUG(("%lu %p %s", c->id, c->fd, url));
     }
     return c;
 }
 
-struct mg_connection *mg_wrapfd(struct mg_mgr *mgr, int fd,
-                                mg_event_handler_t fn, void *fn_data)
+struct emb_connection *emb_wrapfd(struct emb_mgr *mgr, int fd,
+                                emb_event_handler_t fn, void *fn_data)
 {
-    struct mg_connection *c = mg_alloc_conn(mgr);
+    struct emb_connection *c = emb_alloc_conn(mgr);
     if (c != NULL)
     {
         c->fd = (void *)(size_t)fd;
         c->fn = fn;
         c->fn_data = fn_data;
-        mg_call(c, MG_EV_OPEN, NULL);
-        LIST_ADD_HEAD(struct mg_connection, &mgr->conns, c);
+        emb_call(c, EMB_EV_OPEN, NULL);
+        LIST_ADD_HEAD(struct emb_connection, &mgr->conns, c);
     }
     return c;
 }
 
-struct mg_timer *mg_timer_add(struct mg_mgr *mgr, uint64_t milliseconds,
+struct emb_timer *emb_timer_add(struct emb_mgr *mgr, uint64_t milliseconds,
                               unsigned flags, void (*fn)(void *), void *arg)
 {
-    struct mg_timer *t = (struct mg_timer *)calloc(1, sizeof(*t));
-    mg_timer_init(&mgr->timers, t, milliseconds, flags, fn, arg);
+    struct emb_timer *t = (struct emb_timer *)calloc(1, sizeof(*t));
+    emb_timer_init(&mgr->timers, t, milliseconds, flags, fn, arg);
     return t;
 }
 
-void mg_mgr_free(struct mg_mgr *mgr)
+void emb_mgr_free(struct emb_mgr *mgr)
 {
-    struct mg_connection *c;
-    struct mg_timer *tmp, *t = mgr->timers;
+    struct emb_connection *c;
+    struct emb_timer *tmp, *t = mgr->timers;
     while (t != NULL)
         tmp = t->next, free(t), t = tmp;
     mgr->timers = NULL; // Important. Next call to poll won't touch timers
     for (c = mgr->conns; c != NULL; c = c->next)
         c->is_closing = 1;
-    mg_mgr_poll(mgr, 0);
-#if MG_ARCH == MG_ARCH_FREERTOS_TCP
+    emb_mgr_poll(mgr, 0);
+#if EMB_ARCH == EMB_ARCH_FREERTOS_TCP
     FreeRTOS_DeleteSocketSet(mgr->ss);
 #endif
-    MG_DEBUG(("All connections closed"));
+    EMB_DEBUG(("All connections closed"));
 }
 
-void mg_mgr_init(struct mg_mgr *mgr)
+void emb_mgr_init(struct emb_mgr *mgr)
 {
     memset(mgr, 0, sizeof(*mgr));
-#if MG_ARCH == MG_ARCH_WIN32 && MG_ENABLE_WINSOCK
+#if EMB_ARCH == EMB_ARCH_WIN32 && EMB_ENABLE_WINSOCK
     // clang-format off
   { WSADATA data; WSAStartup(MAKEWORD(2, 2), &data); }
     // clang-format on
-#elif MG_ARCH == MG_ARCH_FREERTOS_TCP
+#elif EMB_ARCH == EMB_ARCH_FREERTOS_TCP
     mgr->ss = FreeRTOS_CreateSocketSet();
 #elif defined(__unix) || defined(__unix__) || defined(__APPLE__)
     // Ignore SIGPIPE signal, so if client cancels the request, it

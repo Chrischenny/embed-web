@@ -5,12 +5,12 @@
 #include "url.h"
 #include "util.h"
 
-#if MG_ENABLE_MBEDTLS
+#if EMB_ENABLE_MBEDTLS
 #include <mbedtls/debug.h>
 #include <mbedtls/net_sockets.h>
 #include <mbedtls/ssl.h>
 
-struct mg_tls {
+struct emb_tls {
   char *cafile;             // CA certificate path
   mbedtls_x509_crt ca;      // Parsed CA certificate
   mbedtls_x509_crt cert;    // Parsed certificate

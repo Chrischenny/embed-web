@@ -1,7 +1,7 @@
 #include "base64.h"
 #include <string.h>
 
-static int mg_b64idx(int c) {
+static int emb_b64idx(int c) {
   if (c < 26) {
     return c + 'A';
   } else if (c < 52) {
@@ -13,7 +13,7 @@ static int mg_b64idx(int c) {
   }
 }
 
-static int mg_b64rev(int c) {
+static int emb_b64rev(int c) {
   if (c >= 'A' && c <= 'Z') {
     return c - 'A';
   } else if (c >= 'a' && c <= 'z') {
@@ -31,26 +31,26 @@ static int mg_b64rev(int c) {
   }
 }
 
-int mg_base64_update(unsigned char ch, char *to, int n) {
+int emb_base64_update(unsigned char ch, char *to, int n) {
   int rem = (n & 3) % 3;
   if (rem == 0) {
-    to[n] = (char) mg_b64idx(ch >> 2);
+    to[n] = (char) emb_b64idx(ch >> 2);
     to[++n] = (char) ((ch & 3) << 4);
   } else if (rem == 1) {
-    to[n] = (char) mg_b64idx(to[n] | (ch >> 4));
+    to[n] = (char) emb_b64idx(to[n] | (ch >> 4));
     to[++n] = (char) ((ch & 15) << 2);
   } else {
-    to[n] = (char) mg_b64idx(to[n] | (ch >> 6));
-    to[++n] = (char) mg_b64idx(ch & 63);
+    to[n] = (char) emb_b64idx(to[n] | (ch >> 6));
+    to[++n] = (char) emb_b64idx(ch & 63);
     n++;
   }
   return n;
 }
 
-int mg_base64_final(char *to, int n) {
+int emb_base64_final(char *to, int n) {
   int saved = n;
   // printf("---[%.*s]\n", n, to);
-  if (n & 3) n = mg_base64_update(0, to, n);
+  if (n & 3) n = emb_base64_update(0, to, n);
   if ((saved & 3) == 2) n--;
   // printf("    %d[%.*s]\n", n, n, to);
   while (n & 3) to[n++] = '=';
@@ -58,19 +58,19 @@ int mg_base64_final(char *to, int n) {
   return n;
 }
 
-int mg_base64_encode(const unsigned char *p, int n, char *to) {
+int emb_base64_encode(const unsigned char *p, int n, char *to) {
   int i, len = 0;
-  for (i = 0; i < n; i++) len = mg_base64_update(p[i], to, len);
-  len = mg_base64_final(to, len);
+  for (i = 0; i < n; i++) len = emb_base64_update(p[i], to, len);
+  len = emb_base64_final(to, len);
   return len;
 }
 
-int mg_base64_decode(const char *src, int n, char *dst) {
+int emb_base64_decode(const char *src, int n, char *dst) {
   const char *end = src + n;
   int len = 0;
   while (src + 3 < end) {
-    int a = mg_b64rev(src[0]), b = mg_b64rev(src[1]), c = mg_b64rev(src[2]),
-        d = mg_b64rev(src[3]);
+    int a = emb_b64rev(src[0]), b = emb_b64rev(src[1]), c = emb_b64rev(src[2]),
+        d = emb_b64rev(src[3]);
     if (a == 64 || a < 0 || b == 64 || b < 0 || c < 0 || d < 0) return 0;
     dst[len++] = (char) ((a << 2) | (b >> 4));
     if (src[2] != '=') {

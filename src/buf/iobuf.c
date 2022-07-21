@@ -11,7 +11,7 @@ static void zeromem(volatile unsigned char *buf, size_t len) {
   }
 }
 
-int mg_iobuf_resize(struct mg_iobuf *io, size_t new_size) {
+int emb_iobuf_resize(struct emb_iobuf *io, size_t new_size) {
   int ok = 1;
   if (new_size == 0) {
     zeromem(io->buf, io->size);
@@ -31,25 +31,25 @@ int mg_iobuf_resize(struct mg_iobuf *io, size_t new_size) {
       io->size = new_size;
     } else {
       ok = 0;
-      MG_ERROR(("%lld->%lld", (uint64_t) io->size, (uint64_t) new_size));
+      EMB_ERROR(("%lld->%lld", (uint64_t) io->size, (uint64_t) new_size));
     }
   }
   return ok;
 }
 
-int mg_iobuf_init(struct mg_iobuf *io, size_t size) {
+int emb_iobuf_init(struct emb_iobuf *io, size_t size) {
   io->buf = NULL;
   io->size = io->len = 0;
-  return mg_iobuf_resize(io, size);
+  return emb_iobuf_resize(io, size);
 }
 
-size_t mg_iobuf_add(struct mg_iobuf *io, size_t ofs, const void *buf,
+size_t emb_iobuf_add(struct emb_iobuf *io, size_t ofs, const void *buf,
                     size_t len, size_t chunk_size) {
   size_t new_size = io->len + len;
   if (new_size > io->size) {
     new_size += chunk_size;             // Make sure that io->size
     new_size -= new_size % chunk_size;  // is aligned by chunk_size boundary
-    mg_iobuf_resize(io, new_size);      // Attempt to realloc
+    emb_iobuf_resize(io, new_size);      // Attempt to realloc
     if (new_size != io->size) len = 0;  // Realloc failure, append nothing
   }
   if (ofs < io->len) memmove(io->buf + ofs + len, io->buf + ofs, io->len - ofs);
@@ -59,7 +59,7 @@ size_t mg_iobuf_add(struct mg_iobuf *io, size_t ofs, const void *buf,
   return len;
 }
 
-size_t mg_iobuf_del(struct mg_iobuf *io, size_t ofs, size_t len) {
+size_t emb_iobuf_del(struct emb_iobuf *io, size_t ofs, size_t len) {
   if (ofs > io->len) ofs = io->len;
   if (ofs + len > io->len) len = io->len - ofs;
   if (io->buf) memmove(io->buf + ofs, io->buf + ofs + len, io->len - ofs - len);
@@ -68,6 +68,6 @@ size_t mg_iobuf_del(struct mg_iobuf *io, size_t ofs, size_t len) {
   return len;
 }
 
-void mg_iobuf_free(struct mg_iobuf *io) {
-  mg_iobuf_resize(io, 0);
+void emb_iobuf_free(struct emb_iobuf *io) {
+  emb_iobuf_resize(io, 0);
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#if MG_ARCH == MG_ARCH_TIRTOS
+#if EMB_ARCH == EMB_ARCH_TIRTOS
 
 #include <stdlib.h>
 #include <ctype.h>
@@ -17,5 +17,7 @@
 
 extern int SockStatus(SOCKET hSock, int request, int *results );
 extern int SockSet(SOCKET hSock, int Type, int Prop, void *pbuf, int size);
+#define EMB_SOCK_ERRNO errno
+#define closesocket(x) close(x)
 
 #endif

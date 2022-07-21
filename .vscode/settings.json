@@ -1,0 +1,19 @@
+{
+    "files.associations": {
+        "stdint.h": "c",
+        "stddef.h": "c",
+        "array": "c",
+        "chrono": "c",
+        "functional": "c",
+        "istream": "c",
+        "ostream": "c",
+        "ratio": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "emb_session.h": "c",
+        "*.tcc": "cpp",
+        "fstream": "cpp",
+        "stdlib.h": "c"
+    }
+}

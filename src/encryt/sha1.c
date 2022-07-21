@@ -62,7 +62,7 @@ static uint32_t blk0(union char64long16 *block, int i) {
   z += (w ^ x ^ y) + blk(i) + 0xCA62C1D6 + rol(v, 5); \
   w = rol(w, 30);
 
-static void mg_sha1_transform(uint32_t state[5],
+static void emb_sha1_transform(uint32_t state[5],
                               const unsigned char buffer[64]) {
   uint32_t a, b, c, d, e;
   union char64long16 block[1];
@@ -169,7 +169,7 @@ static void mg_sha1_transform(uint32_t state[5],
   (void) e;
 }
 
-void mg_sha1_init(mg_sha1_ctx *context) {
+void emb_sha1_init(emb_sha1_ctx *context) {
   context->state[0] = 0x67452301;
   context->state[1] = 0xEFCDAB89;
   context->state[2] = 0x98BADCFE;
@@ -178,7 +178,7 @@ void mg_sha1_init(mg_sha1_ctx *context) {
   context->count[0] = context->count[1] = 0;
 }
 
-void mg_sha1_update(mg_sha1_ctx *context, const unsigned char *data,
+void emb_sha1_update(emb_sha1_ctx *context, const unsigned char *data,
                     size_t len) {
   size_t i, j;
 
@@ -188,9 +188,9 @@ void mg_sha1_update(mg_sha1_ctx *context, const unsigned char *data,
   j = (j >> 3) & 63;
   if ((j + len) > 63) {
     memcpy(&context->buffer[j], data, (i = 64 - j));
-    mg_sha1_transform(context->state, context->buffer);
+    emb_sha1_transform(context->state, context->buffer);
     for (; i + 63 < len; i += 64) {
-      mg_sha1_transform(context->state, &data[i]);
+      emb_sha1_transform(context->state, &data[i]);
     }
     j = 0;
   } else
@@ -198,7 +198,7 @@ void mg_sha1_update(mg_sha1_ctx *context, const unsigned char *data,
   memcpy(&context->buffer[j], &data[i], len - i);
 }
 
-void mg_sha1_final(unsigned char digest[20], mg_sha1_ctx *context) {
+void emb_sha1_final(unsigned char digest[20], emb_sha1_ctx *context) {
   unsigned i;
   unsigned char finalcount[8], c;
 
@@ -208,12 +208,12 @@ void mg_sha1_final(unsigned char digest[20], mg_sha1_ctx *context) {
                                      255);
   }
   c = 0200;
-  mg_sha1_update(context, &c, 1);
+  emb_sha1_update(context, &c, 1);
   while ((context->count[0] & 504) != 448) {
     c = 0000;
-    mg_sha1_update(context, &c, 1);
+    emb_sha1_update(context, &c, 1);
   }
-  mg_sha1_update(context, finalcount, 8);
+  emb_sha1_update(context, finalcount, 8);
   for (i = 0; i < 20; i++) {
     digest[i] =
         (unsigned char) ((context->state[i >> 2] >> ((3 - (i & 3)) * 8)) & 255);

@@ -1,6 +1,6 @@
 #pragma once
 
-#if MG_ARCH == MG_ARCH_RTX_LWIP
+#if EMB_ARCH == EMB_ARCH_RTX_LWIP
 
 #include <ctype.h>
 #include <stdarg.h>
@@ -28,12 +28,12 @@ struct timeval {
 
 #define mkdir(a, b) (-1)
 
-#ifndef MG_IO_SIZE
-#define MG_IO_SIZE 512
+#ifndef EMB_IO_SIZE
+#define EMB_IO_SIZE 512
 #endif
 
-#ifndef MG_PATH_MAX
-#define MG_PATH_MAX 128
+#ifndef EMB_PATH_MAX
+#define EMB_PATH_MAX 128
 #endif
 
 
